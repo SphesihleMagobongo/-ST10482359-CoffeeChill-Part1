@@ -1,0 +1,9 @@
+CoffeeNChill - Espresso Recipe Sheet
+====================================
+
+1. Grind 18g of fresh espresso beans (fine grind).
+2. Tamp evenly with ~15kg of pressure.
+3. Extract for 25-30 seconds for a double shot (36ml yield).
+4. Serve immediately. Crema should be golden-brown.
+
+Machine cleaning: backflush group head after every shift.
