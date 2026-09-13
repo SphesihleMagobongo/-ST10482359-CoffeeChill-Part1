@@ -1,0 +1,10 @@
+bin/
+obj/
+out/
+.vs/
+.git/
+.gitignore
+local.settings.json
+*.user
+Dockerfile
+.dockerignore
