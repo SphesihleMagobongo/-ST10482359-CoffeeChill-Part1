@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Storage:Mode": "Azurite",
+    "Storage:MenuTableName": "MenuItems",
+    "Storage:StaffDocsShareName": "staff-docs",
+    "Storage:MaxUploadBytes": "10485760"
+  }
+}

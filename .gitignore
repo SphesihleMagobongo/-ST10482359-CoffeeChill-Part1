@@ -1,0 +1,28 @@
+## Build output
+bin/
+obj/
+out/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+
+## Test results
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+
+## OS files
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+## Local tooling
+node_modules/
+*.log
