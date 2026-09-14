@@ -5,7 +5,8 @@ canteen. Menu items are stored in Azure Table Storage and staff documents in a
 `staff-docs` file share, all emulated locally with Azurite and packaged as
 standalone Docker containers (no Compose).
 
-**Video (unlisted YouTube):** `<ADD_YOUTUBE_LINK_HERE>`
+**Video (unlisted YouTube):** 
+https://youtu.be/1dkDmuSSHJI
 
 **Docker Hub:** `sphesihlezorro/coffeenchill-functions:v1.0` and
 `sphesihlezorro/coffeenchill-azurite:v1.0`
