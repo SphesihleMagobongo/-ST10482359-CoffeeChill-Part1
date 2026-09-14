@@ -400,7 +400,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "C:/Users/msawa/OneDrive/Documents/CloudPart1(poe)/docs/sample-docs/espresso-recipe.txt",
+                  "src": "espresso-recipe.txt",
                   "description": "Select any PDF/TXT/DOCX/MD/XLSX/PPTX/PNG/JPG file. A sample is included in docs/sample-docs/."
                 }
               ]
