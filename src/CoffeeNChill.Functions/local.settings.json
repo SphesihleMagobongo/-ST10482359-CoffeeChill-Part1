@@ -6,6 +6,9 @@
     "Storage:Mode": "Azurite",
     "Storage:MenuTableName": "MenuItems",
     "Storage:StaffDocsShareName": "staff-docs",
-    "Storage:MaxUploadBytes": "10485760"
+    "Storage:MaxUploadBytes": "10485760",
+    "Storage:OrderQueueName": "order-processing-queue",
+    "Storage:OrdersTableName": "Orders",
+    "Orders:StatusDelayMs": "1500"
   }
 }

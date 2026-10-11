@@ -9,6 +9,8 @@ var host = new HostBuilder()
     .ConfigureServices(services =>
     {
         services.AddSingleton<IMenuItemRepository, MenuItemRepository>();
+        services.AddSingleton<IOrderRepository, OrderRepository>();
+        services.AddSingleton<IOrderQueueProducer, OrderQueueProducer>();
         services.AddSingleton<IStaffDocumentStore>(sp =>
         {
             var config = sp.GetRequiredService<IConfiguration>();
