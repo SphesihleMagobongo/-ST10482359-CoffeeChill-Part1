@@ -12,13 +12,14 @@ public static class OrderStatus
     public const string Collected = "Collected";
 }
 
+// One row per order. PartitionKey = order date (yyyy-MM-dd), RowKey = OrderId.
 [Part2("Orders table entity - PartitionKey = order date, RowKey = OrderId")]
 public class OrderEntity : ITableEntity
 {
     public string PartitionKey { get; set; } = string.Empty;
     public string RowKey { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
-    public string SelectedItemSKUs { get; set; } = string.Empty;
+    public string SelectedItemSKUs { get; set; } = string.Empty; // comma-separated
     public double TotalPrice { get; set; }
     public string Status { get; set; } = OrderStatus.Received;
     public DateTimeOffset OrderTimestamp { get; set; }

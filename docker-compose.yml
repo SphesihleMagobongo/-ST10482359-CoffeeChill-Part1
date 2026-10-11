@@ -1,17 +1,19 @@
 services:
   azurite:
-    image: sphesihlezorro/coffeenchill-azurite:v2.0
+    image: sphesihlezorro/coffeenchill-azurite:v2.0   # published image pulled from Docker Hub
     container_name: azurite
+    # Explicit 0.0.0.0 hosts so other containers can reach all three services; data lives in /data.
     command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data
     ports:
       - "10000:10000"   # Blob
       - "10001:10001"   # Queue
       - "10002:10002"   # Table
     volumes:
-      - azurite-data:/data
+      - azurite-data:/data   # persist tables/queues/blobs across restarts
     networks:
       - coffeenchill-net
     healthcheck:
+      # Blob endpoint reachable = Azurite is up (any HTTP response counts)
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:10000/').then(r=>process.exit(0)).catch(()=>process.exit(1))\""]
       interval: 5s
       timeout: 5s
@@ -20,21 +22,22 @@ services:
     restart: unless-stopped
 
   functions:
-    image: sphesihlezorro/coffeenchill-functions:v2.0
+    image: sphesihlezorro/coffeenchill-functions:v2.0   # published image pulled from Docker Hub
     container_name: coffeenchill-functions
     depends_on:
       azurite:
-        condition: service_healthy
+        condition: service_healthy   # wait until Azurite responds before starting the host
     ports:
       - "7071:80"
     environment:
+      # Connection string points at the 'azurite' container hostname on the shared network.
       AzureWebJobsStorage: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;"
       Storage__Mode: "Azurite"
       Storage__MenuTableName: "MenuItems"
       Storage__StaffDocsShareName: "staff-docs"
       Storage__OrderQueueName: "order-processing-queue"
       Storage__OrdersTableName: "Orders"
-      Orders__StatusDelayMs: "1500"
+      Orders__StatusDelayMs: "1500"   # pause between lifecycle transitions
     networks:
       - coffeenchill-net
     restart: unless-stopped

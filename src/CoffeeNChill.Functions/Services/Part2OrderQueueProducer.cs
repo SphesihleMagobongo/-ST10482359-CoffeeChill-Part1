@@ -25,6 +25,7 @@ public class OrderQueueProducer : IOrderQueueProducer
 
     public async Task<string> EnqueueAsync(QueueOrderRequest request, CancellationToken ct = default)
     {
+        // Build the queue message; server generates OrderId + timestamp so clients can't spoof them.
         var message = new OrderQueueMessage
         {
             OrderId = string.IsNullOrWhiteSpace(request.OrderId)
@@ -36,10 +37,11 @@ public class OrderQueueProducer : IOrderQueueProducer
             OrderTimestamp = DateTimeOffset.UtcNow
         };
 
+        // Serialize to JSON, then Base64-encode before pushing onto the queue.
         var json = JsonSerializer.Serialize(message, SerializerOptions);
         var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
-        await _queue.CreateIfNotExistsAsync(cancellationToken: ct);
+        await _queue.CreateIfNotExistsAsync(cancellationToken: ct); // ensure the queue exists
         await _queue.SendMessageAsync(base64, cancellationToken: ct);
 
         _logger.LogInformation("Queued order {OrderId} for {Customer} ({ItemCount} items, R{Total})",

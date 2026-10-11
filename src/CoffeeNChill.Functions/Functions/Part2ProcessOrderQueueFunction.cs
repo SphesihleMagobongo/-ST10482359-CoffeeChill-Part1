@@ -12,6 +12,7 @@ namespace CoffeeNChill.Functions.Functions;
 [Part2("QueueTrigger consumer: parses payload, writes Orders table, advances lifecycle, logs poison failures")]
 public class ProcessOrderQueueFunction
 {
+    // Statuses the worker walks an order through after recording it.
     private static readonly string[] Lifecycle =
         { OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.Collected };
 
@@ -24,10 +25,11 @@ public class ProcessOrderQueueFunction
     public ProcessOrderQueueFunction(IOrderRepository orders, IConfiguration config, ILogger<ProcessOrderQueueFunction> logger)
     {
         _orders = orders;
-        _statusDelayMs = StorageConfig.GetOrderStatusDelayMs(config);
+        _statusDelayMs = StorageConfig.GetOrderStatusDelayMs(config); // pause between status updates
         _logger = logger;
     }
 
+    // Fires automatically whenever a message lands on order-processing-queue.
     [Function("ProcessOrderQueue")]
     public async Task Run(
         [QueueTrigger("order-processing-queue")] string message,
@@ -36,17 +38,19 @@ public class ProcessOrderQueueFunction
         OrderQueueMessage? order;
         try
         {
-            var json = TryDecodeBase64(message);
+            var json = TryDecodeBase64(message); // producer sends Base64-encoded JSON
             order = JsonSerializer.Deserialize<OrderQueueMessage>(json, SerializerOptions);
         }
         catch (Exception ex) when (ex is FormatException or JsonException)
         {
+            // Bad payload: log it and rethrow so the runtime retries, then moves it to the poison queue.
             _logger.LogError(ex, "POISON: failed to decode/parse queue message. Raw payload: {Payload}", message);
             throw;
         }
 
         if (order is null || string.IsNullOrWhiteSpace(order.OrderId))
         {
+            // Message parsed but is not a usable order - treat it as poison too.
             _logger.LogError("POISON: queue message did not contain a valid order payload. Raw payload: {Payload}", message);
             throw new InvalidOperationException("Queue message was not a valid order payload.");
         }
@@ -55,8 +59,9 @@ public class ProcessOrderQueueFunction
 
         try
         {
-            await _orders.CreateReceivedAsync(order, ct);
+            await _orders.CreateReceivedAsync(order, ct); // initial insert with Status = Received
 
+            // Simulate the barista lifecycle: Received -> Preparing -> Ready -> Collected.
             foreach (var status in Lifecycle)
             {
                 await Task.Delay(_statusDelayMs, ct);
@@ -65,6 +70,7 @@ public class ProcessOrderQueueFunction
         }
         catch (RequestFailedException ex)
         {
+            // Storage hiccup: rethrow so the runtime retries the message (poisoned after max retries).
             _logger.LogError(ex, "Storage failure while processing order {OrderId} - message will be retried and eventually poisoned", order.OrderId);
             throw;
         }
@@ -72,6 +78,7 @@ public class ProcessOrderQueueFunction
         _logger.LogInformation("Order {OrderId} lifecycle complete (Received -> Preparing -> Ready -> Collected)", order.OrderId);
     }
 
+    // Decodes Base64 when the producer encoded it; otherwise returns the raw text.
     private static string TryDecodeBase64(string input)
     {
         try
@@ -80,7 +87,7 @@ public class ProcessOrderQueueFunction
         }
         catch (FormatException)
         {
-            return input;
+            return input; // message was already plain JSON
         }
     }
 }

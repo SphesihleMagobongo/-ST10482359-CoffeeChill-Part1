@@ -23,6 +23,8 @@ public class OrderFunctions
         _logger = logger;
     }
 
+    // Queue producer: validates the payload, pushes it to order-processing-queue, returns 202.
+    // The client gets an instant response while a queue-triggered function processes it in the background.
     [Function("QueueOrder")]
     public async Task<HttpResponseData> QueueOrder(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders/queue")] HttpRequestData req,
@@ -51,12 +53,14 @@ public class OrderFunctions
         }
         catch (Exception ex) when (ex is RequestFailedException or AggregateException or TaskCanceledException)
         {
+            // Queue unreachable (Azurite down etc.) - report 503 rather than a raw 500.
             _logger.LogError(ex, "Queue storage operation failed");
             return await HttpHelpers.ErrorAsync(req, HttpStatusCode.ServiceUnavailable,
                 "Order queue is currently unavailable. Please retry.");
         }
     }
 
+    // Returns every order in the Orders table with its current lifecycle status.
     [Function("GetAllOrders")]
     public async Task<HttpResponseData> GetAllOrders(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orders")] HttpRequestData req,
@@ -66,6 +70,7 @@ public class OrderFunctions
         return await HttpHelpers.JsonAsync(req, HttpStatusCode.OK, orders.Select(o => o.ToResponse()).ToList());
     }
 
+    // Returns a single order by OrderId (404 when it does not exist).
     [Function("GetOrderById")]
     public async Task<HttpResponseData> GetOrderById(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orders/{id}")] HttpRequestData req,

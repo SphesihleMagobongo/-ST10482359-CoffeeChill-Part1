@@ -19,16 +19,17 @@ public class OrderRepository : IOrderRepository
         _table = client.GetTableClient(StorageConfig.GetOrdersTableName(config));
     }
 
+    // Inserts the order with Status = Received. PartitionKey = order date, RowKey = OrderId.
     public async Task<OrderEntity> CreateReceivedAsync(OrderQueueMessage order, CancellationToken ct = default)
     {
         await _table.CreateIfNotExistsAsync(ct);
 
         var entity = new OrderEntity
         {
-            PartitionKey = order.OrderTimestamp.ToString("yyyy-MM-dd"),
+            PartitionKey = order.OrderTimestamp.ToString("yyyy-MM-dd"), // group orders by day
             RowKey = order.OrderId,
             CustomerName = order.CustomerName,
-            SelectedItemSKUs = string.Join(',', order.SelectedItemSKUs),
+            SelectedItemSKUs = string.Join(',', order.SelectedItemSKUs), // SKUs stored comma-separated
             TotalPrice = order.TotalPrice,
             Status = OrderStatus.Received,
             OrderTimestamp = order.OrderTimestamp,
@@ -48,10 +49,12 @@ public class OrderRepository : IOrderRepository
         return entity;
     }
 
+    // Moves an order to the next lifecycle status (Preparing / Ready / Collected).
     public async Task<OrderEntity?> AdvanceStatusAsync(string orderId, string newStatus, CancellationToken ct = default)
     {
         await _table.CreateIfNotExistsAsync(ct);
 
+        // Partition is derived from the order date, which we do not know here - scan by RowKey instead.
         OrderEntity? entity = null;
         await foreach (var e in _table.QueryAsync<OrderEntity>(
             TableClient.CreateQueryFilter($"RowKey eq {orderId}"), cancellationToken: ct))
