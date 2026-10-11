@@ -1,0 +1,49 @@
+using System.Text;
+using System.Text.Json;
+using Azure.Storage.Queues;
+using CoffeeNChill.Functions.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace CoffeeNChill.Functions.Services;
+
+public class OrderQueueProducer : IOrderQueueProducer
+{
+    private static readonly JsonSerializerOptions SerializerOptions = new();
+
+    private readonly QueueClient _queue;
+    private readonly ILogger<OrderQueueProducer> _logger;
+
+    public OrderQueueProducer(IConfiguration config, ILogger<OrderQueueProducer> logger)
+    {
+        _logger = logger;
+        _queue = new QueueClient(
+            StorageConfig.GetConnectionString(config),
+            StorageConfig.GetOrderQueueName(config));
+    }
+
+    public async Task<string> EnqueueAsync(QueueOrderRequest request, CancellationToken ct = default)
+    {
+        var message = new OrderQueueMessage
+        {
+            OrderId = string.IsNullOrWhiteSpace(request.OrderId)
+                ? $"ORD-{DateTimeOffset.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}"
+                : request.OrderId.Trim(),
+            CustomerName = request.CustomerName.Trim(),
+            SelectedItemSKUs = request.SelectedItemSKUs.Select(s => s.Trim()).ToList(),
+            TotalPrice = request.TotalPrice,
+            OrderTimestamp = DateTimeOffset.UtcNow
+        };
+
+        var json = JsonSerializer.Serialize(message, SerializerOptions);
+        var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+        await _queue.CreateIfNotExistsAsync(cancellationToken: ct);
+        await _queue.SendMessageAsync(base64, cancellationToken: ct);
+
+        _logger.LogInformation("Queued order {OrderId} for {Customer} ({ItemCount} items, R{Total})",
+            message.OrderId, message.CustomerName, message.SelectedItemSKUs.Count, message.TotalPrice);
+
+        return message.OrderId;
+    }
+}

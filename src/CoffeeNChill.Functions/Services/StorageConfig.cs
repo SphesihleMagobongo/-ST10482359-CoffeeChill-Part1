@@ -15,6 +15,15 @@ public static class StorageConfig
     public static string GetStaffDocsShareName(IConfiguration config) =>
         config["Storage:StaffDocsShareName"] ?? "staff-docs";
 
+    public static string GetOrderQueueName(IConfiguration config) =>
+        config["Storage:OrderQueueName"] ?? "order-processing-queue";
+
+    public static string GetOrdersTableName(IConfiguration config) =>
+        config["Storage:OrdersTableName"] ?? "Orders";
+
+    public static int GetOrderStatusDelayMs(IConfiguration config) =>
+        int.TryParse(config["Orders:StatusDelayMs"], out var v) ? v : 1500;
+
     public static long GetMaxUploadBytes(IConfiguration config) =>
         long.TryParse(config["Storage:MaxUploadBytes"], out var v) ? v : 10 * 1024 * 1024;
 }
