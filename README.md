@@ -6,10 +6,12 @@ in `staff-docs`, and orders flow asynchronously through the
 `order-processing-queue` Storage Queue into an `Orders` table. Everything runs
 locally on Azurite, orchestrated by a single `docker-compose.yml`.
 
-**Part 2 video (unlisted YouTube):**
-`<ADD_PART2_YOUTUBE_LINK_HERE>`
+**Part 1 video:**
+ https://youtu.be/1dkDmuSSHJI
 
-**Part 1 video:** https://youtu.be/1dkDmuSSHJI
+**Part 2 video:**
+https://youtu.be/5m_itxgW_XU
+
 
 **Docker Hub:** `sphesihlezorro/coffeenchill-functions:v2.0` and
 `sphesihlezorro/coffeenchill-azurite:v2.0`
