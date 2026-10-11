@@ -502,6 +502,190 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "4. Orders (Queue Processing)",
+      "item": [
+        {
+          "name": "Queue New Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 202 Accepted', function () { pm.response.to.have.status(202); });",
+                  "const body = pm.response.json();",
+                  "pm.test('Response echoes queue name', function () { pm.expect(body.queue).to.eql('order-processing-queue'); });",
+                  "pm.test('Response contains generated orderId', function () { pm.expect(body.orderId).to.be.a('string').and.not.empty; });",
+                  "pm.collectionVariables.set('lastOrderId', body.orderId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Jane Smith\",\n  \"selectedItemSKUs\": [\"COF-001\", \"PAS-104\"],\n  \"totalPrice\": 65.00\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders/queue", "host": ["{{baseUrl}}"], "path": ["api", "orders", "queue"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Queue Invalid Order (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Validation errors are returned', function () { pm.expect(pm.response.json().errors).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"J\",\n  \"selectedItemSKUs\": [],\n  \"totalPrice\": -2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders/queue", "host": ["{{baseUrl}}"], "path": ["api", "orders", "queue"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Wait For Order In Orders Table",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const orderUrl = pm.collectionVariables.get('baseUrl') + '/api/orders/' + pm.collectionVariables.get('lastOrderId');",
+                  "let attempts = 0;",
+                  "const poll = function () {",
+                  "    attempts++;",
+                  "    pm.sendRequest(orderUrl, function (err, res) {",
+                  "        if (attempts > 60) {",
+                  "            pm.test('Queue trigger wrote order to Orders table', function () { pm.expect.fail('Timed out waiting for order'); });",
+                  "            return;",
+                  "        }",
+                  "        if (!err && res.code === 200) {",
+                  "            const order = res.json();",
+                  "            pm.test('Queue trigger wrote order to Orders table', function () { pm.expect(order.orderId).to.eql(pm.collectionVariables.get('lastOrderId')); });",
+                  "            pm.test('Status is a valid lifecycle value', function () { pm.expect(['Received', 'Preparing', 'Ready', 'Collected']).to.include(order.status); });",
+                  "            pm.test('Order fields are populated', function () {",
+                  "                pm.expect(order.customerName).to.eql('Jane Smith');",
+                  "                pm.expect(order.orderDate).to.be.a('string').and.not.empty;",
+                  "                pm.expect(order.statusUpdatedAt).to.not.be.null;",
+                  "            });",
+                  "        } else {",
+                  "            setTimeout(poll, 500);",
+                  "        }",
+                  "    });",
+                  "};",
+                  "poll();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders/{{lastOrderId}}", "host": ["{{baseUrl}}"], "path": ["api", "orders", "{{lastOrderId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const orders = pm.response.json();",
+                  "pm.test('Response is an array', function () { pm.expect(orders).to.be.an('array'); });",
+                  "pm.test('Queued order appears in Orders table', function () {",
+                  "    const id = pm.collectionVariables.get('lastOrderId');",
+                  "    pm.expect(orders.some(o => o.orderId === id)).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Missing Order (expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders/ORD-0000-0000", "host": ["{{baseUrl}}"], "path": ["api", "orders", "ORD-0000-0000"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Order Reached Collected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const orderUrl = pm.collectionVariables.get('baseUrl') + '/api/orders/' + pm.collectionVariables.get('lastOrderId');",
+                  "let attempts = 0;",
+                  "const poll = function () {",
+                  "    attempts++;",
+                  "    pm.sendRequest(orderUrl, function (err, res) {",
+                  "        if (attempts > 60) {",
+                  "            pm.test('Order reached Collected', function () { pm.expect.fail('Timed out waiting for lifecycle'); });",
+                  "            return;",
+                  "        }",
+                  "        if (!err && res.code === 200 && res.json().status === 'Collected') {",
+                  "            pm.test('Order reached Collected', function () { pm.expect(res.json().status).to.eql('Collected'); });",
+                  "        } else {",
+                  "            setTimeout(poll, 500);",
+                  "        }",
+                  "    });",
+                  "};",
+                  "poll();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders/{{lastOrderId}}", "host": ["{{baseUrl}}"], "path": ["api", "orders", "{{lastOrderId}}"] }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
