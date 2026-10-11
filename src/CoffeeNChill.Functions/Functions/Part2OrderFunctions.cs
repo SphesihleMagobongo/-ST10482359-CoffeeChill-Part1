@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoffeeNChill.Functions.Functions;
 
+[Part2("HTTP endpoints: POST /api/orders/queue producer + GET /api/orders status readers")]
 public class OrderFunctions
 {
     private readonly IOrderQueueProducer _queue;

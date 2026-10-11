@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoffeeNChill.Functions.Functions;
 
+[Part2("QueueTrigger consumer: parses payload, writes Orders table, advances lifecycle, logs poison failures")]
 public class ProcessOrderQueueFunction
 {
     private static readonly string[] Lifecycle =

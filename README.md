@@ -68,6 +68,29 @@ azurite --location ./azurite-data --silent
 cd src/CoffeeNChill.Functions && func start
 ```
 
+## Files added for Part 2
+
+All Part 2 code is prefixed `Part2` and marked with a `[Part2]` code attribute
+(defined in `src/CoffeeNChill.Functions/Part2Attribute.cs`).
+
+- `Functions/Part2OrderFunctions.cs` — `QueueOrder` (POST /api/orders/queue),
+  `GetAllOrders`, `GetOrderById` HTTP functions.
+- `Functions/Part2ProcessOrderQueueFunction.cs` — `ProcessOrderQueue`
+  `[QueueTrigger("order-processing-queue")]` consumer with lifecycle
+  transitions and poison-queue logging.
+- `Services/Part2OrderQueueProducer.cs` + `Part2IOrderQueueProducer.cs` —
+  JSON serialization, Base64 encoding, queue push, OrderId/timestamp
+  generation.
+- `Services/Part2OrderRepository.cs` + `Part2IOrderRepository.cs` — `Orders`
+  table writes, status advancement, queries.
+- `Models/Part2OrderEntity.cs` — `OrderEntity` + lifecycle status constants.
+- `Models/Part2OrderDtos.cs` — `QueueOrderRequest` (validated),
+  `OrderQueueMessage`, `OrderResponse`.
+- `docker-compose.yml` — two-service orchestration pulling `v2.0` images from
+  Docker Hub, custom bridge network, Azurite data volume, healthcheck.
+- `docs/CoffeeNChill-Part1.postman_collection.json` — extended with the
+  "4. Orders (Queue Processing)" folder.
+
 ## Changelog
 
 - **Part 2** — added `QueueOrder` producer endpoint with validation +

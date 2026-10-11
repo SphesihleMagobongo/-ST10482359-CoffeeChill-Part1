@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoffeeNChill.Functions.Services;
 
+[Part2("Serializes orders to JSON, Base64-encodes and pushes to order-processing-queue; generates OrderId + timestamp")]
 public class OrderQueueProducer : IOrderQueueProducer
 {
     private static readonly JsonSerializerOptions SerializerOptions = new();

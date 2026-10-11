@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoffeeNChill.Functions.Services;
 
+[Part2("Orders table persistence: create as Received, advance lifecycle status, query by RowKey")]
 public class OrderRepository : IOrderRepository
 {
     private readonly TableClient _table;

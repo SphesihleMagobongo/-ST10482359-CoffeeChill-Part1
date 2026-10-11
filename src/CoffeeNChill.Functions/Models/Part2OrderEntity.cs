@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 
 namespace CoffeeNChill.Functions.Models;
 
+[Part2("Order lifecycle status constants (Received -> Preparing -> Ready -> Collected)")]
 public static class OrderStatus
 {
     public const string Received = "Received";
@@ -11,6 +12,7 @@ public static class OrderStatus
     public const string Collected = "Collected";
 }
 
+[Part2("Orders table entity - PartitionKey = order date, RowKey = OrderId")]
 public class OrderEntity : ITableEntity
 {
     public string PartitionKey { get; set; } = string.Empty;

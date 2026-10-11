@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CoffeeNChill.Functions.Models;
 
+[Part2("Client payload for POST /api/orders/queue with DataAnnotations validation")]
 public class QueueOrderRequest
 {
     [RegularExpression(@"^[A-Za-z0-9_-]{2,50}$", ErrorMessage = "orderId may only contain letters, digits, hyphens and underscores (2-50 chars)")]
@@ -19,6 +20,7 @@ public class QueueOrderRequest
     public double TotalPrice { get; set; }
 }
 
+[Part2("Message contract serialized to JSON and Base64-encoded onto order-processing-queue")]
 public class OrderQueueMessage
 {
     public string OrderId { get; set; } = string.Empty;
